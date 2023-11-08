@@ -1,42 +1,44 @@
 resource "azurerm_virtual_network" "main" {
-  name                = "${var.prefix}-network"
+  count               = length(var.resource_group_name)
+  name                = "${var.prefix}-network-${element(var.resource_group_name, count.index)}"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.azure_my_rg.location
-  resource_group_name = azurerm_resource_group.azure_my_rg.name
+  location            = azurerm_resource_group.azure_my_rg[count.index].location
+  resource_group_name = azurerm_resource_group.azure_my_rg[count.index].name
 }
 
 resource "azurerm_subnet" "internal" {
-  name                 = "internal"
-  resource_group_name  = azurerm_resource_group.azure_my_rg.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  count                = length(var.resource_group_name)
+  name                 = "internal-${element(var.resource_group_name, count.index)}"
+  resource_group_name  = azurerm_resource_group.azure_my_rg[count.index].name
+  virtual_network_name = azurerm_virtual_network.main[count.index].name
   address_prefixes     = ["10.0.2.0/24"]
 }
 
 resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
-  location            = azurerm_resource_group.azure_my_rg.location
-  resource_group_name = azurerm_resource_group.azure_my_rg.name
+  count               = length(var.resource_group_name)
+  name                = "${var.prefix}-nic-${element(var.resource_group_name, count.index)}"
+  location            = azurerm_resource_group.azure_my_rg[count.index].location
+  resource_group_name = azurerm_resource_group.azure_my_rg[count.index].name
 
   ip_configuration {
-    name                          = "testconfiguration1"
-    subnet_id                     = azurerm_subnet.internal.id
+    name                          = "ip-${element(var.resource_group_name, count.index)}"
+    subnet_id                     = azurerm_subnet.internal[count.index].id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
 
 resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
-  location              = azurerm_resource_group.azure_my_rg.location
-  resource_group_name   = azurerm_resource_group.azure_my_rg.name
-  network_interface_ids = [azurerm_network_interface.main.id]
-  vm_size               = "Standard_B1s"
+  count                            = length(var.resource_group_name)
+  name                             = "${var.prefix}-vm-${element(var.resource_group_name, count.index)}"
+  location                         = azurerm_resource_group.azure_my_rg[count.index].location
+  resource_group_name              = azurerm_resource_group.azure_my_rg[count.index].name
+  network_interface_ids            = [azurerm_network_interface.main[count.index].id]
+  vm_size                          = "Standard_B1s"
+  delete_data_disks_on_termination = true
 
   # Uncomment this line to delete the OS disk automatically when deleting the VM
-  # delete_os_disk_on_termination = true
-
-  # Uncomment this line to delete the data disks automatically when deleting the VM
-  # delete_data_disks_on_termination = true
+  delete_os_disk_on_termination = true
 
   storage_image_reference {
     publisher = "Canonical"
@@ -45,10 +47,12 @@ resource "azurerm_virtual_machine" "main" {
     version   = "latest"
   }
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk1-${element(var.resource_group_name, count.index)}"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
+
+
   }
   os_profile {
     computer_name  = "hostname"
@@ -59,6 +63,6 @@ resource "azurerm_virtual_machine" "main" {
     disable_password_authentication = false
   }
   tags = {
-    environment = "staging"
+    environment = "staging-${element(var.resource_group_name, count.index)}"
   }
 }
