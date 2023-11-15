@@ -5,12 +5,12 @@
 #     region = "us-east-1"
 #   }
 # }
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "azure-terraform-backend"
-    storage_account_name = "aztfbackend1113"
-    container_name       = "aztfbackend1113ct"
-    key                  = "azure.terraform"
+# terraform {
+#   backend "azurerm" {
+#     resource_group_name  = "azure-terraform-backend"
+#     storage_account_name = "aztfbackend1113"
+#     container_name       = "aztfbackend1113ct"
+#     key                  = "azure.terraform"
 
-  }
-}
+#   }
+# }
